@@ -21,16 +21,21 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.vihao211.Eargasm"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-web-browser", "expo-secure-store"],
+    "plugins": [
+      "expo-web-browser",
+      "expo-secure-store"
+    ],
     "extra": {
       "eas": {
         "projectId": "9f8be268-1a67-4a5a-9ded-ce4761c3c60f"
       }
-    }
+    },
+    "owner": "vihao211"
   }
 }
