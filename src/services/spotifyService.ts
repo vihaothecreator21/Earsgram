@@ -8,6 +8,19 @@ import {
   SpotifyTrack,
 } from "../types/spotify";
 
+const readJsonResponse = async <T = any>(response: Response): Promise<T> => {
+  const bodyText = await response.text();
+
+  try {
+    return JSON.parse(bodyText) as T;
+  } catch {
+    const preview = bodyText.slice(0, 120).trim() || "Empty response";
+    throw new Error(
+      `Expected JSON from ${response.url || "request"} (${response.status}): ${preview}`
+    );
+  }
+};
+
 export const exchangeCodeForToken = async (
   code: string,
   codeVerifier: string
@@ -26,7 +39,9 @@ export const exchangeCodeForToken = async (
     body: requestBody,
   });
 
-  const json = await response.json();
+  const json = await readJsonResponse<
+    SpotifyTokenResponse & { error?: string; error_description?: string }
+  >(response);
   if (json.error) throw new Error(json.error_description || json.error);
   return json;
 };
@@ -35,7 +50,7 @@ export const getUserProfile = async (token: string): Promise<SpotifyProfile> => 
   const response = await fetch("https://api.spotify.com/v1/me", {
     headers: { Authorization: `Bearer ${token}` },
   });
-  return await response.json();
+  return await readJsonResponse<SpotifyProfile>(response);
 };
 
 export const getUserTopTracks = async (token: string) => {
@@ -45,8 +60,9 @@ export const getUserTopTracks = async (token: string) => {
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-  const json: { albums?: { items?: SpotifyAlbumSummary[] } } =
-    await response.json();
+  const json = await readJsonResponse<{
+    albums?: { items?: SpotifyAlbumSummary[] };
+  }>(response);
 
   if (json.albums?.items) {
     return {
@@ -78,7 +94,7 @@ export const searchSpotify = async (
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-  return await response.json();
+  return await readJsonResponse(response);
 };
 
 export const getUserPlaylists = async (token: string) => {
@@ -88,14 +104,14 @@ export const getUserPlaylists = async (token: string) => {
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-  return await response.json();
+  return await readJsonResponse(response);
 };
 
 export const getAlbumDetails = async (token: string, albumId: string) => {
   const response = await fetch(`https://api.spotify.com/v1/albums/${albumId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  return await response.json();
+  return await readJsonResponse(response);
 };
 
 export const getAlbumTracks = async (
@@ -109,7 +125,7 @@ export const getAlbumTracks = async (
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-  return await response.json();
+  return await readJsonResponse(response);
 };
 
 export const checkUserSavedAlbums = async (token: string, albumId: string) => {
@@ -119,7 +135,7 @@ export const checkUserSavedAlbums = async (token: string, albumId: string) => {
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-  const data = await response.json();
+  const data = await readJsonResponse<boolean[]>(response);
   return data[0];
 };
 
@@ -130,7 +146,7 @@ export const getArtistDetails = async (token: string, artistId: string) => {
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-  return await response.json();
+  return await readJsonResponse(response);
 };
 
 export const getArtistTopTracks = async (
@@ -144,7 +160,7 @@ export const getArtistTopTracks = async (
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-  return await response.json();
+  return await readJsonResponse(response);
 };
 
 export const getArtistAlbums = async (token: string, artistId: string) => {
@@ -154,7 +170,7 @@ export const getArtistAlbums = async (token: string, artistId: string) => {
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-  return await response.json();
+  return await readJsonResponse(response);
 };
 
 export const saveToken = async (
@@ -225,7 +241,10 @@ export const createPlaylist = async (
       }
     );
 
-    const json = await response.json();
+    const json = await readJsonResponse<{
+      id: string;
+      error?: { message: string };
+    }>(response);
     if (json.error) throw new Error(json.error.message);
     return json;
   } catch (error) {
@@ -250,7 +269,7 @@ export const addTrackToPlaylist = async (
       body: JSON.stringify({ uris: [trackUri] }),
     }
   );
-  return await response.json();
+  return await readJsonResponse(response);
 };
 
 export const addItemToQueue = async (token: string, trackUri: string) => {
@@ -273,7 +292,7 @@ export const getPlaylistTracks = async (token: string, playlistId: string) => {
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-  return await response.json();
+  return await readJsonResponse(response);
 };
 
 export const removeTrackFromPlaylist = async (
@@ -292,7 +311,7 @@ export const removeTrackFromPlaylist = async (
       body: JSON.stringify({ tracks: [{ uri: trackUri }] }),
     }
   );
-  return await response.json();
+  return await readJsonResponse(response);
 };
 
 export const getPlayableUrl = async (
@@ -310,7 +329,10 @@ export const getPlayableUrl = async (
         query
       )}&media=music&entity=song&limit=1`
     );
-    const data = await response.json();
+    const data = await readJsonResponse<{
+      resultCount: number;
+      results: { previewUrl: string }[];
+    }>(response);
 
     if (data.resultCount > 0) return data.results[0].previewUrl;
   } catch (error) {

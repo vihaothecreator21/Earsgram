@@ -29,7 +29,13 @@ export const uploadAvatarToCloudinary = async (uri: string) => {
       }
     );
 
-    const data = await response.json();
+    const bodyText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(bodyText);
+    } catch {
+      throw new Error(bodyText.slice(0, 120) || "Invalid Cloudinary response");
+    }
 
     if (data.error) {
       throw new Error(data.error.message);
