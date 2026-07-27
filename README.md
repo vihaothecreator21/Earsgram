@@ -89,4 +89,4 @@ Formatting conventions are documented in `.prettierrc`.
 
 Do not commit `.env` files or private service credentials. If this project is deployed beyond demo usage, move Spotify token exchange/refresh behind a backend service and audit Firestore rules.
 
-See `docs/ARCHITECTURE.md`, `docs/FRONTEND_REVIEW.md`, and `docs/FIRESTORE_RULES.example` for implementation notes.
+
