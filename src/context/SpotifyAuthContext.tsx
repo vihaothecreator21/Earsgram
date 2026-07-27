@@ -15,6 +15,7 @@ import {
   saveToken,
 } from "../services/spotifyService";
 import { SpotifyProfile } from "../types/spotify";
+import { getErrorMessage } from "../utils/getErrorMessage";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -119,8 +120,8 @@ export const SpotifyAuthProvider = ({ children }: { children: React.ReactNode })
           { merge: true }
         );
       }
-    } catch (err: any) {
-      Alert.alert("Spotify Error", err.message);
+    } catch (err) {
+      Alert.alert("Spotify Error", getErrorMessage(err));
     } finally {
       setLoading(false);
     }

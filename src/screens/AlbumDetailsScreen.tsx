@@ -15,7 +15,7 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { BlurView } from "expo-blur";
 
 // Contexts & Services
@@ -29,13 +29,35 @@ import {
 } from "../services/spotifyService";
 import { NowPlayingIndicator } from "../components/NowPlayingIndicator";
 import { SkeletonTrackItem } from "../components/SkeletonLoader";
+import { SpotifyAlbum, SpotifyArtist, SpotifyTrack } from "../types/spotify";
 
 const { width, height } = Dimensions.get("window");
 const HEADER_HEIGHT = 350;
 
+interface AlbumDetails extends SpotifyAlbum {
+  artists: SpotifyArtist[];
+  release_date?: string;
+  type?: string;
+}
+
+interface AlbumTrack extends SpotifyTrack {
+  duration_ms: number;
+  explicit?: boolean;
+}
+
+type AlbumDetailsRoute = RouteProp<
+  {
+    AlbumDetails: {
+      albumId: string;
+      albumData?: AlbumDetails;
+    };
+  },
+  "AlbumDetails"
+>;
+
 export default function AlbumDetailsScreen() {
   const navigation = useNavigation();
-  const route = useRoute<any>();
+  const route = useRoute<AlbumDetailsRoute>();
 
   const { albumId, albumData: initialData } = route.params;
 
@@ -43,8 +65,8 @@ export default function AlbumDetailsScreen() {
   const { playTrack, currentTrack, isPlaying } = useMusic();
   const { colors } = useTheme();
 
-  const [album, setAlbum] = useState<any>(initialData || null);
-  const [tracks, setTracks] = useState<any[]>([]);
+  const [album, setAlbum] = useState<AlbumDetails | null>(initialData || null);
+  const [tracks, setTracks] = useState<AlbumTrack[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
@@ -74,7 +96,7 @@ export default function AlbumDetailsScreen() {
 
       setAlbum(albumDetails);
 
-      const mappedTracks = tracksRes.items.map((track: any) => ({
+      const mappedTracks: AlbumTrack[] = tracksRes.items.map((track: AlbumTrack) => ({
         id: track.id,
         name: track.name,
         duration_ms: track.duration_ms,
@@ -218,7 +240,7 @@ export default function AlbumDetailsScreen() {
     </Animated.View>
   );
 
-  const renderTrackItem = ({ item }: { item: any }) => {
+  const renderTrackItem = ({ item }: { item: AlbumTrack }) => {
     const isTrackPlaying = currentTrack?.id === item.id && isPlaying;
     const isCurrentTrack = currentTrack?.id === item.id;
     return (
@@ -244,7 +266,7 @@ export default function AlbumDetailsScreen() {
             )}
             <Text style={styles.trackArtist} numberOfLines={1}>
               {item.artists?.length
-                ? item.artists.map((a: any) => a.name).join(", ")
+                ? item.artists.map((a) => a.name).join(", ")
                 : "Unknown Artist"}
             </Text>
           </View>
