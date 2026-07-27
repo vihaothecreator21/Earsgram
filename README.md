@@ -63,6 +63,8 @@ Register this redirect URI in the Spotify Developer Dashboard for the app client
 
 Firebase and Spotify client configuration live in `src/config`. Firebase web config and Spotify client IDs are public client identifiers, but production Firestore rules must restrict access per authenticated user.
 
+Spotify access tokens are persisted locally per authenticated Firebase user and are not stored in Firestore. Firestore only stores connection metadata such as Spotify profile ID, email, and connection state.
+
 ## Portfolio Notes
 
 This project demonstrates:
@@ -81,4 +83,4 @@ npm run typecheck
 
 ## Security Notes
 
-Do not commit `.env` files or private service credentials. If this project is deployed beyond demo usage, move sensitive token exchange/storage behind a backend service and audit Firestore rules.
+Do not commit `.env` files or private service credentials. If this project is deployed beyond demo usage, move Spotify token exchange/refresh behind a backend service and audit Firestore rules.

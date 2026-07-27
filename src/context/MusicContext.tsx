@@ -11,12 +11,13 @@ import { Audio } from "expo-av";
 import { db, auth } from "../config/firebaseConfig";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { getPlayableUrl } from "../services/spotifyService";
+import { SpotifyTrack } from "../types/spotify";
 
 interface MusicContextType {
   isPlaying: boolean;
-  currentTrack: any;
+  currentTrack: SpotifyTrack | null;
   isExpanded: boolean;
-  playTrack: (track: any, list?: any[]) => Promise<void>;
+  playTrack: (track: SpotifyTrack, list?: SpotifyTrack[]) => Promise<void>;
   pauseTrack: () => Promise<void>;
   resumeTrack: () => Promise<void>;
   closePlayer: () => Promise<void>;
@@ -27,11 +28,11 @@ interface MusicContextType {
   seekTo: (value: number) => Promise<void>;
   playNext: () => Promise<void>;
   playPrevious: () => Promise<void>;
-  insertNext: (track: any) => void;
-  addToQueue: (track: any) => void;
+  insertNext: (track: SpotifyTrack) => void;
+  addToQueue: (track: SpotifyTrack) => void;
   removeFromQueue: (trackId: string) => void;
-  queue: any[];
-  reorderQueue?: (newQueue: any[]) => void;
+  queue: SpotifyTrack[];
+  reorderQueue?: (newQueue: SpotifyTrack[]) => void;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -41,7 +42,7 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   const playStartTimeRef = useRef<number | null>(null);
 
   // Use refs to keep latest queue/index for playNext/playPrevious
-  const queueRef = useRef<any[]>([]);
+  const queueRef = useRef<SpotifyTrack[]>([]);
   const currentIndexRef = useRef<number>(-1);
 
   const seekTo = async (value: number) => {
@@ -56,10 +57,10 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(1);
 
-  const [currentTrack, setCurrentTrack] = useState<any>(null);
+  const [currentTrack, setCurrentTrack] = useState<SpotifyTrack | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const [queue, setQueue] = useState<any[]>([]);
+  const [queue, setQueue] = useState<SpotifyTrack[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
 
   useEffect(() => {
@@ -71,7 +72,7 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   }, [currentIndex]);
 
   // Save listening history to Firestore
-  const saveListeningHistory = useCallback(async (track: any) => {
+  const saveListeningHistory = useCallback(async (track: SpotifyTrack) => {
     try {
       const user = auth.currentUser;
       if (!user) {
@@ -121,7 +122,7 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const insertNext = useCallback((trackToAdd: any) => {
+  const insertNext = useCallback((trackToAdd: SpotifyTrack) => {
     const currentQueue = [...queueRef.current];
     const currentIdx = currentIndexRef.current;
 
@@ -184,7 +185,7 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
     await playTrack(currentQueue[prevIndex], currentQueue);
   };
 
-  const playTrack = async (track: any, list?: any[]) => {
+  const playTrack = async (track: SpotifyTrack, list?: SpotifyTrack[]) => {
     const previewUrl =
       track.preview_url ||
       "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
@@ -422,7 +423,7 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
     setIsPlaying(false);
   };
 
-  const addToQueue = useCallback((trackToAdd: any) => {
+  const addToQueue = useCallback((trackToAdd: SpotifyTrack) => {
     // Láº¥y queue hiá»‡n táº¡i
     const currentQueue = [...queueRef.current];
 
@@ -437,7 +438,7 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const reorderQueue = useCallback(
-    (newQueue: any[]) => {
+    (newQueue: SpotifyTrack[]) => {
       queueRef.current = newQueue;
       setQueue(newQueue);
 

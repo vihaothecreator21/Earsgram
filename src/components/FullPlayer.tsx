@@ -225,6 +225,8 @@ export default function FullPlayer() {
     }
   };
 
+  if (!currentTrack) return null;
+
   return (
     <>
       <Animated.View

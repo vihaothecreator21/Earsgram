@@ -1,42 +1,36 @@
-// src/context/SpotifyAuthContext.tsx
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Alert } from "react-native";
-import { useAuthRequest, ResponseType } from "expo-auth-session";
+import { ResponseType, useAuthRequest } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
-// 👇 Quan trọng: Import getDoc, setDoc
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { deleteField, doc, setDoc } from "firebase/firestore";
+
 import { auth, db } from "../config/firebaseConfig";
 import { SPOTIFY_CONFIG } from "../config/spotifyConfig";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-
 import {
+  clearToken,
   exchangeCodeForToken,
+  getSavedToken,
   getUserProfile,
   saveToken,
-  getSavedToken,
-  clearToken
 } from "../services/spotifyService";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SpotifyProfile } from "../types/spotify";
 
 WebBrowser.maybeCompleteAuthSession();
 
 type SpotifyContextType = {
   token: string | null;
   loading: boolean;
-  userProfile: any;
+  userProfile: SpotifyProfile | null;
   connectSpotify: () => void;
   logoutSpotify: () => Promise<void>;
 };
 
 const SpotifyAuthContext = createContext<SpotifyContextType | null>(null);
 
-export const SpotifyAuthProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const SpotifyAuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<SpotifyProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [request, response, promptAsync] = useAuthRequest(
@@ -50,7 +44,6 @@ export const SpotifyAuthProvider = ({
     SPOTIFY_CONFIG.discovery
   );
 
-  // --- 1. LOGIC KHÔI PHỤC TOKEN KHI MỞ APP ---
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -61,40 +54,17 @@ export const SpotifyAuthProvider = ({
       }
 
       setLoading(true);
-      
-      // A. Thử lấy từ bộ nhớ máy trước (nhanh)
-      let activeToken = await getSavedToken(user.uid);
+      const activeToken = await getSavedToken(user.uid);
 
-      // B. Nếu máy không có, lên Firestore lấy về (đồng bộ)
-      if (!activeToken) {
-        try {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            const spotifyData = data.spotify;
-
-            // Kiểm tra token trên mây còn hạn không
-            if (spotifyData?.accessToken && spotifyData?.tokenExpiration > Date.now()) {
-               activeToken = spotifyData.accessToken;
-               console.log("☁️ Restored Spotify token from Firestore");
-               // Lưu lại vào máy để lần sau load nhanh hơn
-               await saveToken(activeToken as string, 3600, user.uid); 
-            }
-          }
-        } catch (e) {
-          console.log("⚠️ Error fetching from Firestore", e);
-        }
-      }
-
-      // C. Nếu tìm được token -> Set state & Load Profile
       if (activeToken) {
         setToken(activeToken);
         try {
-            const profile = await getUserProfile(activeToken);
-            setUserProfile(profile);
-        } catch (e) {
-            console.log("❌ Token invalid/expired");
-            setToken(null);
+          const profile = await getUserProfile(activeToken);
+          setUserProfile(profile);
+        } catch (error) {
+          if (__DEV__) console.log("Spotify token invalid or expired", error);
+          await clearToken(user.uid);
+          setToken(null);
         }
       }
 
@@ -115,7 +85,6 @@ export const SpotifyAuthProvider = ({
     promptAsync();
   };
 
-  // --- 2. LOGIC LƯU TOKEN LÊN FIRESTORE ---
   const handleExchangeToken = async (code: string) => {
     try {
       setLoading(true);
@@ -126,34 +95,29 @@ export const SpotifyAuthProvider = ({
 
       const { access_token, expires_in } = tokenResult;
 
-      // Lưu Local
       setToken(access_token);
       if (auth.currentUser) {
         await saveToken(access_token, expires_in, auth.currentUser.uid);
       }
 
-      // Lấy Profile
       const profile = await getUserProfile(access_token);
       setUserProfile(profile);
 
-      // 👇 QUAN TRỌNG: Lưu token lên Firestore tại đây
       if (auth.currentUser) {
-        const expirationTime = Date.now() + (expires_in * 1000);
-        
         await setDoc(
           doc(db, "users", auth.currentUser.uid),
           {
-            spotify: { 
-                isConnected: true,
-                accessToken: access_token, // ✅ PHẢI CÓ DÒNG NÀY
-                tokenExpiration: expirationTime, // ✅ Lưu cả hạn dùng
-                email: profile.email || null,
-                id: profile.id
+            spotify: {
+              isConnected: true,
+              email: profile.email || null,
+              id: profile.id,
+              connectedAt: new Date().toISOString(),
+              accessToken: deleteField(),
+              tokenExpiration: deleteField(),
             },
           },
-          { merge: true } // Merge để không mất dữ liệu khác (avatar, bio...)
+          { merge: true }
         );
-        console.log("✅ Saved Spotify Token to Firestore successfully");
       }
     } catch (err: any) {
       Alert.alert("Spotify Error", err.message);
@@ -166,12 +130,19 @@ export const SpotifyAuthProvider = ({
     setToken(null);
     setUserProfile(null);
 
-    // Update Firestore về null
     if (auth.currentUser) {
-        await clearToken(auth.currentUser.uid);
-        await setDoc(doc(db, "users", auth.currentUser.uid), {
-            spotify: { isConnected: false, accessToken: null, tokenExpiration: 0 }
-        }, { merge: true });
+      await clearToken(auth.currentUser.uid);
+      await setDoc(
+        doc(db, "users", auth.currentUser.uid),
+        {
+          spotify: {
+            isConnected: false,
+            accessToken: deleteField(),
+            tokenExpiration: deleteField(),
+          },
+        },
+        { merge: true }
+      );
     }
 
     await signOut(auth);
@@ -179,13 +150,7 @@ export const SpotifyAuthProvider = ({
 
   return (
     <SpotifyAuthContext.Provider
-      value={{
-        token,
-        loading,
-        userProfile,
-        connectSpotify,
-        logoutSpotify,
-      }}
+      value={{ token, loading, userProfile, connectSpotify, logoutSpotify }}
     >
       {children}
     </SpotifyAuthContext.Provider>

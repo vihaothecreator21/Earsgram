@@ -14,23 +14,16 @@ import {
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { useMusic } from "../context/MusicContext";
+import { SpotifyTrack } from "../types/spotify";
 
 const { height } = Dimensions.get("window");
 
-interface QueueTrack {
-  id: string;
-  name: string;
-  artists: { name: string }[];
-  album: { images: { url: string }[] };
-  preview_url?: string;
-}
-
 interface QueueModalProps {
   visible: boolean;
-  queue: QueueTrack[];
+  queue: SpotifyTrack[];
   currentTrackId?: string;
   onClose: () => void;
-  onTrackSelect: (track: QueueTrack) => void;
+  onTrackSelect: (track: SpotifyTrack) => void;
   onRemoveTrack: (trackId: string) => void;
 }
 
@@ -125,7 +118,7 @@ export const QueueModal = ({
     item,
     index,
   }: {
-    item: QueueTrack;
+    item: SpotifyTrack;
     index: number;
   }) => {
     const isCurrentTrack = item.id === currentTrackId;

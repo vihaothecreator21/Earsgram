@@ -1,4 +1,4 @@
-// src/screens/LoginScreen.tsx
+﻿// src/screens/LoginScreen.tsx
 import React, { useState } from "react";
 import {
   View,
@@ -27,23 +27,23 @@ export default function LoginScreen() {
 
   const validateInput = () => {
     if (!email.trim()) {
-      Alert.alert("⚠️ Missing information", "Please enter your email");
+      Alert.alert("â ï¸ Missing information", "Please enter your email");
       return false;
     }
 
     if (!isValidEmail(email)) {
-      Alert.alert("⚠️ Invalid email", "Please enter a valid email");
+      Alert.alert("â ï¸ Invalid email", "Please enter a valid email");
       return false;
     }
 
     if (!password) {
-      Alert.alert("⚠️ Missing information", "Please enter your password");
+      Alert.alert("â ï¸ Missing information", "Please enter your password");
       return false;
     }
 
     if (password.length < 6) {
       Alert.alert(
-        "⚠️ Password too short",
+        "â ï¸ Password too short",
         "Password must be at least 6 characters long"
       );
       return false;
@@ -66,17 +66,16 @@ export default function LoginScreen() {
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         displayName: user.email?.split("@")[0] ?? "New User",
-        avatarUrl: null, // để thêm sửa avatar,displayname cho user
+        avatarUrl: null, // Ä‘á»ƒ thĂªm sá»­a avatar,displayname cho user
         createdAt: new Date().toISOString(),
         spotify: {
           isConnected: false,
-          accessToken: null,
         },
       });
 
-      Alert.alert("🎉 Success", "Successfully registered!");
+      Alert.alert("đŸ‰ Success", "Successfully registered!");
     } catch (error: any) {
-      Alert.alert("❌ Error", error.message);
+      Alert.alert("âŒ Error", error.message);
     }
   };
 
@@ -84,17 +83,17 @@ export default function LoginScreen() {
     if (!validateInput()) return;
 
     try {
-      // 1. Đăng nhập Authentication
+      // 1. ÄÄƒng nháº­p Authentication
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Kiểm tra xem user này đã có dữ liệu trong Firestore chưa
+      // 2. Kiá»ƒm tra xem user nĂ y Ä‘Ă£ cĂ³ dá»¯ liá»‡u trong Firestore chÆ°a
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
-      // 3. Nếu chưa có (do lỡ tay xóa hoặc lỗi), thì tạo lại dữ liệu mặc định
+      // 3. Náº¿u chÆ°a cĂ³ (do lá»¡ tay xĂ³a hoáº·c lá»—i), thĂ¬ táº¡o láº¡i dá»¯ liá»‡u máº·c Ä‘á»‹nh
       if (!userDoc.exists()) {
-        console.log("⚠️ User missing in Firestore, restoring...");
+        console.log("â ï¸ User missing in Firestore, restoring...");
         await setDoc(userDocRef, {
           email: user.email,
           displayName: user.email?.split("@")[0] ?? "User",
@@ -102,20 +101,19 @@ export default function LoginScreen() {
           createdAt: new Date().toISOString(),
           spotify: {
             isConnected: false,
-            accessToken: null,
           },
         });
       }
 
-      // App sẽ tự động chuyển màn hình nhờ onAuthStateChanged ở nơi khác
+      // App sáº½ tá»± Ä‘á»™ng chuyá»ƒn mĂ n hĂ¬nh nhá» onAuthStateChanged á»Ÿ nÆ¡i khĂ¡c
     } catch (error: any) {
-      Alert.alert("❌ Error signing in", error.message);
+      Alert.alert("âŒ Error signing in", error.message);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>🎧 Eargasm</Text>
+      <Text style={styles.logo}>đŸ§ Eargasm</Text>
       <Text style={styles.subtitle}>Feel the music</Text>
 
       <View style={styles.card}>
@@ -230,3 +228,4 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+

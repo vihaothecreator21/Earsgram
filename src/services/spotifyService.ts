@@ -1,4 +1,5 @@
 import { SPOTIFY_CONFIG } from "../config/spotifyConfig";
+import { SpotifyTrack } from "../types/spotify";
 
 // Hàm đổi Code lấy Token
 export const exchangeCodeForToken = async (
@@ -299,7 +300,7 @@ export const removeTrackFromPlaylist = async (
 };
 
 export const getPlayableUrl = async (
-  spotifyTrack: any
+  spotifyTrack: Pick<SpotifyTrack, "name" | "artists" | "preview_url">
 ): Promise<string | null> => {
   // 1. Nếu Spotify có preview, dùng luôn (ưu tiên hàng chính chủ)
   if (spotifyTrack.preview_url) {
