@@ -162,7 +162,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           },
         ]}
       >
-        EARGASM
+              EARSGRAM
       </Animated.Text>
 
       <Animated.Text

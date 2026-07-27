@@ -107,7 +107,7 @@ const RootNavigation = () => {
       theme={customTheme}
       documentTitle={{
         formatter: (options, route) =>
-          `${options?.title ?? route?.name} - Eargasm`,
+          `${options?.title ?? route?.name} - Earsgram`,
       }}
     >
       <Stack.Navigator
