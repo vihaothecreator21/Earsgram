@@ -2,13 +2,6 @@
 
 A React Native music app built with Expo, Spotify OAuth, Firebase, and a custom preview-audio player.
 
-> Portfolio scope: this repository highlights my frontend/mobile work: screen flows, navigation, player UI, queue interactions, loading/error/empty states, theming, and API integration from the client.
-
-## UI Preview
-
-| Home | Search | Player |
-| --- | --- | --- |
-| ![Home preview](docs/screenshots/home-preview.png) | ![Search preview](docs/screenshots/search-preview.png) | ![Player preview](docs/screenshots/player-preview.png) |
 
 ## Highlights
 
@@ -75,7 +68,6 @@ Firebase and Spotify client configuration live in `src/config`. Firebase web con
 
 Spotify access tokens are persisted locally per authenticated Firebase user and are not stored in Firestore. Firestore only stores connection metadata such as Spotify profile ID, email, and connection state.
 
-## Portfolio Notes
 
 This project demonstrates:
 
