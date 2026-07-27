@@ -33,6 +33,7 @@ import {
   SkeletonTrackItem,
 } from "../components/SkeletonLoader";
 import EmptyState from "../components/EmptyState";
+import { ErrorState } from "../components/ScreenState";
 import EnhancedButton from "../components/EnhancedButton";
 import { PulseAnimation } from "../components/VisualEffects";
 import { useTrackOptions } from "../hooks/useTrackOptions";
@@ -218,6 +219,7 @@ export default function HomeScreen() {
 
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const trendingScrollX = useRef(0);
   const trendingRef = useRef<FlatList>(null);
@@ -267,11 +269,13 @@ export default function HomeScreen() {
     if (!token) return;
 
     setLoading(true);
+    setErrorMessage(null);
     try {
       const data = await getUserTopTracks(token);
       setTracks(data.items || []);
     } catch (e) {
       if (__DEV__) console.error(e);
+      setErrorMessage("Could not load music recommendations. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -382,10 +386,7 @@ export default function HomeScreen() {
               </View>
             </View>
           ) : (
-            <AutoScrollingBanner
-              data={bannerData}
-              onPlay={(item) => playTrack(item, tracks)}
-            />
+            <AutoScrollingBanner data={bannerData} onPlay={(item) => playTrack(item, tracks)} />
           )}
 
           {/* Header Greeting */}
@@ -423,6 +424,25 @@ export default function HomeScreen() {
               </PulseAnimation>
             </EnhancedButton>
           </View>
+
+          {errorMessage && !loading ? (
+            <ErrorState
+              title="Recommendations unavailable"
+              message={errorMessage}
+              actionText="Try Again"
+              onAction={loadData}
+            />
+          ) : null}
+
+          {!errorMessage && !loading && tracks.length === 0 ? (
+            <EmptyState
+              icon="albums-outline"
+              title="No recommendations yet"
+              message="Connect Spotify or try refreshing once your account has music activity."
+              actionText="Refresh"
+              onAction={loadData}
+            />
+          ) : null}
 
           {/* 2. ARTIST / CIRCLE LIST */}
           <View style={styles.section}>

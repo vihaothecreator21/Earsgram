@@ -1,5 +1,4 @@
-﻿// src/screens/LoginScreen.tsx
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import {
   View,
   TextInput,
@@ -28,23 +27,23 @@ export default function LoginScreen() {
 
   const validateInput = () => {
     if (!email.trim()) {
-      Alert.alert("â ï¸ Missing information", "Please enter your email");
+      Alert.alert("Missing information", "Please enter your email");
       return false;
     }
 
     if (!isValidEmail(email)) {
-      Alert.alert("â ï¸ Invalid email", "Please enter a valid email");
+      Alert.alert("Invalid email", "Please enter a valid email");
       return false;
     }
 
     if (!password) {
-      Alert.alert("â ï¸ Missing information", "Please enter your password");
+      Alert.alert("Missing information", "Please enter your password");
       return false;
     }
 
     if (password.length < 6) {
       Alert.alert(
-        "â ï¸ Password too short",
+        "Password too short",
         "Password must be at least 6 characters long"
       );
       return false;
@@ -67,14 +66,14 @@ export default function LoginScreen() {
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         displayName: user.email?.split("@")[0] ?? "New User",
-        avatarUrl: null, // Ä‘á»ƒ thĂªm sá»­a avatar,displayname cho user
+        avatarUrl: null,
         createdAt: new Date().toISOString(),
         spotify: {
           isConnected: false,
         },
       });
 
-      Alert.alert("đŸ‰ Success", "Successfully registered!");
+      Alert.alert("Success", "Successfully registered!");
     } catch (error) {
       Alert.alert("Error", getErrorMessage(error));
     }
@@ -84,17 +83,14 @@ export default function LoginScreen() {
     if (!validateInput()) return;
 
     try {
-      // 1. ÄÄƒng nháº­p Authentication
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Kiá»ƒm tra xem user nĂ y Ä‘Ă£ cĂ³ dá»¯ liá»‡u trong Firestore chÆ°a
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
-      // 3. Náº¿u chÆ°a cĂ³ (do lá»¡ tay xĂ³a hoáº·c lá»—i), thĂ¬ táº¡o láº¡i dá»¯ liá»‡u máº·c Ä‘á»‹nh
       if (!userDoc.exists()) {
-        console.log("â ï¸ User missing in Firestore, restoring...");
+        console.log("User missing in Firestore, restoring...");
         await setDoc(userDocRef, {
           email: user.email,
           displayName: user.email?.split("@")[0] ?? "User",
@@ -106,7 +102,6 @@ export default function LoginScreen() {
         });
       }
 
-      // App sáº½ tá»± Ä‘á»™ng chuyá»ƒn mĂ n hĂ¬nh nhá» onAuthStateChanged á»Ÿ nÆ¡i khĂ¡c
     } catch (error) {
       Alert.alert("Error signing in", getErrorMessage(error));
     }
@@ -114,7 +109,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>đŸ§ Eargasm</Text>
+      <Text style={styles.logo}>Earsgram</Text>
       <Text style={styles.subtitle}>Feel the music</Text>
 
       <View style={styles.card}>
@@ -175,7 +170,7 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#1DB954", // Spotify green vibe
+    color: "#1DB954",
     textAlign: "center",
     marginBottom: 5,
   },

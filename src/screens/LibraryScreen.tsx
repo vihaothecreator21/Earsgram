@@ -1,5 +1,4 @@
-﻿// src/screens/LibraryScreen.tsx
-import React, { useState, useCallback } from "react";
+﻿import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -23,10 +22,12 @@ import {
 } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import { AppStyles as styles } from "../styles/AppStyles"; // âœ… Chá»‰ dĂ¹ng 1 nguá»“n styles duy nháº¥t
+import { AppStyles as styles } from "../styles/AppStyles";
 import { useTheme } from "../context/ThemeContext";
 import { SpotifyPlaylist } from "../types/spotify";
 import { getErrorMessage } from "../utils/getErrorMessage";
+import EmptyState from "../components/EmptyState";
+import { ErrorState, LoadingState } from "../components/ScreenState";
 
 if (
   Platform.OS === "android" &&
@@ -42,7 +43,7 @@ import {
   createPlaylist,
 } from "../services/spotifyService";
 
-import { doc, setDoc } from "firebase/firestore"; // Bá» getDoc vĂ¬ khĂ´ng cáº§n merge ná»¯a
+import { doc, setDoc } from "firebase/firestore";
 import { db, auth } from "../config/firebaseConfig";
 
 type LibraryNavigationRoutes = {
@@ -58,17 +59,15 @@ export default function LibraryScreen() {
   const navigation = useNavigation<NavigationProp<LibraryNavigationRoutes>>();
   const { colors, isDark } = useTheme();
 
-  // State
   const [playlists, setPlaylists] = useState<SpotifyPlaylist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  // Create Playlist State
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [creating, setCreating] = useState(false);
 
-  // Má»—i khi mĂ n hĂ¬nh Ä‘Æ°á»£c focus, load láº¡i danh sĂ¡ch
   useFocusEffect(
     useCallback(() => {
       fetchPlaylists();
@@ -82,21 +81,19 @@ export default function LibraryScreen() {
 
   const fetchPlaylists = async () => {
     try {
+      setErrorMessage(null);
       if (!auth.currentUser) return;
-      // âœ… FIX: Truyá»n uid vĂ o getSavedToken Ä‘á»ƒ láº¥y Ä‘Ăºng token
       const token = await getSavedToken(auth.currentUser.uid);
 
       if (token) {
         const data = await getUserPlaylists(token);
         const rawPlaylists = data.items || [];
 
-        // âœ… FIX QUAN TRá»ŒNG:
-        // Sá»­ dá»¥ng trá»±c tiáº¿p dá»¯ liá»‡u tá»« Spotify Ä‘á»ƒ Ä‘áº£m báº£o sá»‘ lÆ°á»£ng bĂ i hĂ¡t (total) luĂ´n Ä‘Ăºng.
-        // KhĂ´ng cáº§n merge vá»›i Firestore ná»¯a vĂ¬ Spotify lĂ  nguá»“n dá»¯ liá»‡u gá»‘c (Single Source of Truth).
         setPlaylists(rawPlaylists);
       }
     } catch (error) {
       if (__DEV__) console.error(error);
+      setErrorMessage("Could not load your playlists. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -104,7 +101,7 @@ export default function LibraryScreen() {
 
   const handleCreate = async () => {
     if (!newPlaylistName.trim()) {
-      Alert.alert("Lá»—i", "Vui lĂ²ng nháº­p tĂªn Playlist");
+      Alert.alert("Missing name", "Please enter a playlist name.");
       return;
     }
     setCreating(true);
@@ -115,10 +112,8 @@ export default function LibraryScreen() {
 
       const user = await getUserProfile(token);
 
-      // 1. Táº¡o trĂªn Spotify
       const newPl = await createPlaylist(token, user.id, newPlaylistName);
 
-      // 2. LÆ°u vĂ o Firestore Ä‘á»ƒ backup (náº¿u cáº§n dĂ¹ng sau nĂ y)
       if (auth.currentUser) {
         await setDoc(doc(db, "playlists", newPl.id), {
           spotifyId: newPl.id,
@@ -131,10 +126,10 @@ export default function LibraryScreen() {
 
       setCreateModalVisible(false);
       setNewPlaylistName("");
-      fetchPlaylists(); // Load láº¡i Ä‘á»ƒ tháº¥y playlist má»›i
-      Alert.alert("ThĂ nh cĂ´ng", "ÄĂ£ táº¡o playlist má»›i!");
+      fetchPlaylists();
+      Alert.alert("Success", "Playlist created.");
     } catch (e) {
-      Alert.alert("Lá»—i", getErrorMessage(e));
+      Alert.alert("Error", getErrorMessage(e));
     } finally {
       setCreating(false);
     }
@@ -153,7 +148,7 @@ export default function LibraryScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <Text style={[styles.title, { color: colors.text }]}>ThÆ° viá»‡n</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Library</Text>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <TouchableOpacity onPress={toggleViewMode} style={styles.iconBtn}>
               <Ionicons
@@ -166,7 +161,7 @@ export default function LibraryScreen() {
               onPress={() => setCreateModalVisible(true)}
               style={styles.createBtn}
             >
-              <Text style={styles.createBtnText}>+ Táº¡o má»›i</Text>
+              <Text style={styles.createBtnText}>+ New</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -192,10 +187,13 @@ export default function LibraryScreen() {
 
         {/* Playlist List */}
         {loading ? (
-          <ActivityIndicator
-            size="large"
-            color="#1DB954"
-            style={{ marginTop: 50 }}
+          <LoadingState message="Loading your library..." />
+        ) : errorMessage ? (
+          <ErrorState
+            title="Library unavailable"
+            message={errorMessage}
+            actionText="Retry"
+            onAction={fetchPlaylists}
           />
         ) : (
           <FlatList
@@ -212,15 +210,13 @@ export default function LibraryScreen() {
             refreshing={loading}
             onRefresh={fetchPlaylists}
             ListEmptyComponent={
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  textAlign: "center",
-                  marginTop: 50,
-                }}
-              >
-                ChÆ°a cĂ³ playlist nĂ o.
-              </Text>
+              <EmptyState
+                icon="library-outline"
+                title="No playlists yet"
+                message="Create your first playlist to start building your library."
+                actionText="Create Playlist"
+                onAction={() => setCreateModalVisible(true)}
+              />
             }
             renderItem={({ item, index }) => (
               <TouchableOpacity
@@ -246,7 +242,6 @@ export default function LibraryScreen() {
                   >
                     {item.name}
                   </Text>
-                  {/* âœ… FIX: Hiá»ƒn thá»‹ Ä‘Ăºng sá»‘ bĂ i tá»« Spotify */}
                   <Text style={[styles.count, { color: colors.textSecondary }]}>
                     {item.tracks?.total || 0} bĂ i hĂ¡t
                   </Text>
@@ -275,7 +270,7 @@ export default function LibraryScreen() {
               style={[styles.modalView, { backgroundColor: colors.surface }]}
             >
               <Text style={[styles.modalTitle, { color: colors.text }]}>
-                Táº¡o Playlist Má»›i
+                Create Playlist
               </Text>
               <TextInput
                 style={[
@@ -286,7 +281,7 @@ export default function LibraryScreen() {
                     borderColor: colors.border,
                   },
                 ]}
-                placeholder="TĂªn playlist..."
+                placeholder="Playlist name..."
                 placeholderTextColor={colors.textSecondary}
                 value={newPlaylistName}
                 onChangeText={setNewPlaylistName}
@@ -297,7 +292,7 @@ export default function LibraryScreen() {
                   style={[styles.btn, styles.btnCancel]}
                   onPress={() => setCreateModalVisible(false)}
                 >
-                  <Text style={styles.btnText}>Há»§y</Text>
+                  <Text style={styles.btnText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.btn, styles.btnConfirm]}
@@ -305,7 +300,7 @@ export default function LibraryScreen() {
                   disabled={creating}
                 >
                   <Text style={styles.btnText}>
-                    {creating ? "Äang táº¡o..." : "Táº¡o"}
+                    {creating ? "Creating..." : "Create"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -317,5 +312,4 @@ export default function LibraryScreen() {
   );
 }
 
-// âœ… FIX: ÄĂƒ XĂ“A KHá»I 'const styles = ...' á» ÄĂ‚Y Äá»‚ TRĂNH Lá»–I XUNG Äá»˜T
 

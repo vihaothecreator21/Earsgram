@@ -35,6 +35,7 @@ import { useMusic } from "../context/MusicContext";
 import { useTheme } from "../context/ThemeContext";
 import { NowPlayingIndicator } from "../components/NowPlayingIndicator";
 import EmptyState from "../components/EmptyState";
+import { ErrorState } from "../components/ScreenState";
 import { ShimmerEffect } from "../components/VisualEffects";
 
 export default function SearchScreen() {
@@ -43,6 +44,7 @@ export default function SearchScreen() {
   const [tracks, setTracks] = useState<any[]>([]);
   const [artists, setArtists] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { playTrack, currentTrack, isPlaying, addToQueue, insertNext } =
     useMusic();
@@ -101,6 +103,7 @@ export default function SearchScreen() {
     if (query.trim() === "") {
       setTracks([]);
       setArtists([]);
+      setErrorMessage(null);
       return;
     }
     setLoading(true);
@@ -112,6 +115,7 @@ export default function SearchScreen() {
 
   const executeSearch = async (searchTerm: string) => {
     try {
+      setErrorMessage(null);
       if (!auth.currentUser) return;
       const token = await getSavedToken(auth.currentUser.uid);
       if (!token) return;
@@ -120,6 +124,7 @@ export default function SearchScreen() {
       setArtists(data.artists?.items || []);
     } catch (error) {
       if (__DEV__) console.error(error);
+      setErrorMessage("Search is temporarily unavailable. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -384,7 +389,14 @@ export default function SearchScreen() {
           keyExtractor={(item) => item.id}
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={
-            !loading && query.trim() !== "" ? (
+            errorMessage && !loading ? (
+              <ErrorState
+                title="Search failed"
+                message={errorMessage}
+                actionText="Retry"
+                onAction={() => executeSearch(query)}
+              />
+            ) : !loading && query.trim() !== "" ? (
               <EmptyState
                 icon="search-outline"
                 title="No results found"

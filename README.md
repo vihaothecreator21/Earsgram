@@ -2,6 +2,14 @@
 
 A React Native music app built with Expo, Spotify OAuth, Firebase, and a custom preview-audio player.
 
+> Portfolio scope: this repository highlights my frontend/mobile work: screen flows, navigation, player UI, queue interactions, loading/error/empty states, theming, and API integration from the client.
+
+## UI Preview
+
+| Home | Search | Player |
+| --- | --- | --- |
+| ![Home preview](docs/screenshots/home-preview.png) | ![Search preview](docs/screenshots/search-preview.png) | ![Player preview](docs/screenshots/player-preview.png) |
+
 ## Highlights
 
 - Email/password authentication with Firebase Auth
@@ -11,6 +19,7 @@ A React Native music app built with Expo, Spotify OAuth, Firebase, and a custom 
 - Playlist management, liked songs, listening history, and stats dashboard
 - Dark/light theme support with persisted preferences
 - Cloudinary avatar upload support
+- Consistent loading, error, and empty states for key frontend flows
 
 ## Tech Stack
 
@@ -82,8 +91,10 @@ This project demonstrates:
 npm run typecheck
 ```
 
+Formatting conventions are documented in `.prettierrc`.
+
 ## Security Notes
 
 Do not commit `.env` files or private service credentials. If this project is deployed beyond demo usage, move Spotify token exchange/refresh behind a backend service and audit Firestore rules.
 
-See `docs/ARCHITECTURE.md` and `docs/FIRESTORE_RULES.example` for implementation notes.
+See `docs/ARCHITECTURE.md`, `docs/FRONTEND_REVIEW.md`, and `docs/FIRESTORE_RULES.example` for implementation notes.

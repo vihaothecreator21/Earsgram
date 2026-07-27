@@ -26,6 +26,8 @@ import { useMusic } from "../context/MusicContext";
 import { useTheme } from "../context/ThemeContext";
 import { NowPlayingIndicator } from "../components/NowPlayingIndicator";
 import { LikedSong, SpotifyTrack } from "../types/spotify";
+import EmptyState from "../components/EmptyState";
+import { ErrorState, LoadingState } from "../components/ScreenState";
 
 export default function LikedSongsScreen() {
   const navigation = useNavigation();
@@ -34,6 +36,7 @@ export default function LikedSongsScreen() {
 
   const [likedSongs, setLikedSongs] = useState<LikedSong[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLikedSongs();
@@ -42,6 +45,7 @@ export default function LikedSongsScreen() {
   const fetchLikedSongs = async () => {
     try {
       setLoading(true);
+      setErrorMessage(null);
       const user = auth.currentUser;
       if (!user) return;
 
@@ -57,6 +61,7 @@ export default function LikedSongsScreen() {
       setLikedSongs(songs);
     } catch (error) {
       if (__DEV__) console.error("Error fetching liked songs:", error);
+      setErrorMessage("Could not load liked songs. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -159,7 +164,21 @@ export default function LikedSongsScreen() {
       <View
         style={[styles.centerContainer, { backgroundColor: colors.background }]}
       >
-        <ActivityIndicator size="large" color="#E91E63" />
+        <LoadingState message="Loading liked songs..." />
+      </View>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        {renderHeader()}
+        <ErrorState
+          title="Liked songs unavailable"
+          message={errorMessage}
+          actionText="Retry"
+          onAction={fetchLikedSongs}
+        />
       </View>
     );
   }
@@ -168,19 +187,11 @@ export default function LikedSongsScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {renderHeader()}
-        <View style={styles.emptyContainer}>
-          <Ionicons
-            name="heart-outline"
-            size={80}
-            color={colors.textSecondary}
-          />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            No liked songs yet
-          </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-            Double tap on album art to like songs
-          </Text>
-        </View>
+        <EmptyState
+          icon="heart-outline"
+          title="No liked songs yet"
+          message="Double tap album art in the player to save tracks here."
+        />
       </View>
     );
   }
