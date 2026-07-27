@@ -1,4 +1,4 @@
-﻿// src/screens/PlaylistDetailScreen.tsx
+// src/screens/PlaylistDetailScreen.tsx
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -109,9 +109,9 @@ export default function PlaylistDetailScreen() {
   const fetchTracks = async () => {
     try {
       setLoading(true);
-      let combinedTracks: any[] = []; // Máº£ng chá»©a tá»•ng há»£p nháº¡c
+      let combinedTracks: any[] = []; // Mảng chứa tổng hợp nhạc
 
-      // --- NGUá»’N 1: Láº¤Y Tá»ª SPOTIFY (Code cÅ©) ---
+      // --- NGUỒN 1: LẤY TỪ SPOTIFY (Code cũ) ---
       if (auth.currentUser) {
         const token = await getSavedToken(auth.currentUser.uid);
         if (token) {
@@ -124,13 +124,13 @@ export default function PlaylistDetailScreen() {
               combinedTracks = [...spotifyData.items];
             }
           } catch (err) {
-            console.log("Playlist nĂ y khĂ´ng pháº£i cá»§a Spotify hoáº·c lá»—i token");
+            console.log("Playlist này không phải của Spotify hoặc lỗi token");
           }
         }
       }
 
-      // --- NGUá»’N 2: Láº¤Y Tá»ª FIRESTORE (Code má»›i thĂªm) ---
-      // Láº¥y cĂ¡c bĂ i hĂ¡t náº±m trong sub-collection "tracks" cá»§a playlist nĂ y trĂªn Firebase
+      // --- NGUỒN 2: LẤY TỪ FIRESTORE (Code mới thêm) ---
+      // Lấy các bài hát nằm trong sub-collection "tracks" của playlist này trên Firebase
       try {
         const tracksRef = collection(
           db,
@@ -138,20 +138,20 @@ export default function PlaylistDetailScreen() {
           currentPlaylist.id,
           "tracks"
         );
-        // (Optional) Báº¡n cĂ³ thá»ƒ thĂªm orderBy('added_at') náº¿u muá»‘n sáº¯p xáº¿p
+        // (Optional) Bạn có thể thêm orderBy('added_at') nếu muốn sắp xếp
         const snapshot = await getDocs(tracksRef);
 
         const firestoreTracks = snapshot.docs.map((doc) => {
-          // Firestore lÆ°u data dáº¡ng { track: {...}, added_at: ... }
-          // Cáº¥u trĂºc nĂ y khá»›p vá»›i cáº¥u trĂºc items cá»§a Spotify nĂªn merge Ä‘Æ°á»£c luĂ´n
+          // Firestore lưu data dạng { track: {...}, added_at: ... }
+          // Cấu trúc này khớp với cấu trúc items của Spotify nên merge được luôn
           return doc.data();
         });
 
-        // Gá»™p vĂ o danh sĂ¡ch chung
+        // Gộp vào danh sách chung
         combinedTracks = [...combinedTracks, ...firestoreTracks];
 
-        // (NĂ¢ng cao) Lá»c trĂ¹ng láº·p: Náº¿u 1 bĂ i vá»«a cĂ³ trĂªn Spotify vá»«a cĂ³ trĂªn Firebase
-        // DĂ¹ng Map Ä‘á»ƒ lá»c theo ID bĂ i hĂ¡t
+        // (Nâng cao) Lọc trùng lặp: Nếu 1 bài vừa có trên Spotify vừa có trên Firebase
+        // Dùng Map để lọc theo ID bài hát
         const uniqueTracksMap = new Map();
         combinedTracks.forEach((item) => {
           if (item.track && item.track.id) {
@@ -160,10 +160,10 @@ export default function PlaylistDetailScreen() {
         });
         combinedTracks = Array.from(uniqueTracksMap.values());
       } catch (err) {
-        console.log("Lá»—i Ä‘á»c Firebase:", err);
+        console.log("Lỗi đọc Firebase:", err);
       }
 
-      // Cáº­p nháº­t State
+      // Cập nhật State
       setTracks(combinedTracks);
     } catch (e) {
       console.error(e);
@@ -175,7 +175,7 @@ export default function PlaylistDetailScreen() {
     if (!selectedTrackForOptions || !auth.currentUser) return;
 
     try {
-      // 1. đŸ‘‡ KIá»‚M TRA BĂ€I HĂT ÄĂƒ CĂ“ CHÆ¯A
+      // 1. 👇 KIỂM TRA BÀI HÁT ĐÃ CÓ CHƯA
       const trackRef = doc(
         db,
         "playlists",
@@ -186,33 +186,33 @@ export default function PlaylistDetailScreen() {
       const trackSnap = await getDoc(trackRef);
 
       if (trackSnap.exists()) {
-        // Náº¿u cĂ³ rá»“i thĂ¬ bĂ¡o vĂ  dá»«ng luĂ´n, khĂ´ng lĂ m gĂ¬ ná»¯a
+        // Nếu có rồi thì báo và dừng luôn, không làm gì nữa
         Alert.alert(
-          "ÄĂ£ tá»“n táº¡i",
-          `BĂ i hĂ¡t nĂ y Ä‘Ă£ cĂ³ trong playlist ${targetPlaylist.name}`
+          "Đã tồn tại",
+          `Bài hát này đã có trong playlist ${targetPlaylist.name}`
         );
-        setAddToPlaylistModalVisible(false); // ÄĂ³ng modal chá»n
+        setAddToPlaylistModalVisible(false); // Đóng modal chọn
         return;
       }
 
-      // 2. Náº¿u chÆ°a cĂ³ -> Tiáº¿n hĂ nh thĂªm vĂ o sub-collection
+      // 2. Nếu chưa có -> Tiến hành thêm vào sub-collection
       await setDoc(trackRef, {
         track: selectedTrackForOptions,
         added_at: new Date().toISOString(),
         addedBy: auth.currentUser.uid,
       });
 
-      // 3. đŸ‘‡ FIX Lá»–I "No document to update"
-      // Thay vĂ¬ dĂ¹ng updateDoc (báº¯t buá»™c doc pháº£i cĂ³ trÆ°á»›c), ta dĂ¹ng setDoc vá»›i { merge: true }
-      // NghÄ©a lĂ : Náº¿u Playlist chÆ°a cĂ³ trong Firestore -> Táº¡o má»›i luĂ´n. Náº¿u cĂ³ rá»“i -> Chá»‰ update trÆ°á»ng trackCount.
+      // 3. 👇 FIX LỖI "No document to update"
+      // Thay vì dùng updateDoc (bắt buộc doc phải có trước), ta dùng setDoc với { merge: true }
+      // Nghĩa là: Nếu Playlist chưa có trong Firestore -> Tạo mới luôn. Nếu có rồi -> Chỉ update trường trackCount.
       const playlistRef = doc(db, "playlists", targetPlaylist.id);
       await setDoc(
         playlistRef,
         {
-          // Chá»‰ cáº­p nháº­t/táº¡o cĂ¡c trÆ°á»ng nĂ y, giá»¯ nguyĂªn cĂ¡c trÆ°á»ng khĂ¡c (tĂªn, áº£nh...)
+          // Chỉ cập nhật/tạo các trường này, giữ nguyên các trường khác (tên, ảnh...)
           trackCount: increment(1),
           updatedAt: new Date().toISOString(),
-          // LÆ°u thĂªm máº¥y cĂ¡i nĂ y phĂ²ng há» trÆ°á»ng há»£p táº¡o má»›i playlist tá»« Spotify
+          // Lưu thêm mấy cái này phòng hờ trường hợp tạo mới playlist từ Spotify
           id: targetPlaylist.id,
           name: targetPlaylist.name || "Playlist",
           ownerId: auth.currentUser.uid,
@@ -220,17 +220,17 @@ export default function PlaylistDetailScreen() {
         { merge: true }
       );
 
-      // 4. ThĂ´ng bĂ¡o thĂ nh cĂ´ng
+      // 4. Thông báo thành công
       setAddToPlaylistModalVisible(false);
-      showToast(`ÄĂ£ thĂªm vĂ o ${targetPlaylist.name}`, "success");
+      showToast(`Đã thêm vào ${targetPlaylist.name}`, "success");
       setTimeout(
         () =>
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
         150
       );
     } catch (error: any) {
-      console.error("Lá»—i thĂªm playlist:", error);
-      Alert.alert("Lá»—i", "CĂ³ lá»—i xáº£y ra, vui lĂ²ng thá»­ láº¡i sau.");
+      console.error("Lỗi thêm playlist:", error);
+      Alert.alert("Lỗi", "Có lỗi xảy ra, vui lòng thử lại sau.");
     }
   };
 
@@ -271,7 +271,7 @@ export default function PlaylistDetailScreen() {
   ) => {
     setToastMessage(message);
     setToastType(type);
-    // Tá»± táº¯t sau 2 giĂ¢y
+    // Tự tắt sau 2 giây
     setTimeout(() => setToastMessage(null), 2000);
   };
 
@@ -301,7 +301,7 @@ export default function PlaylistDetailScreen() {
         ]);
       }
     } catch (e: any) {
-      Alert.alert("Lá»—i", e.message);
+      Alert.alert("Lỗi", e.message);
     }
   };
   // Handle Liked Function
@@ -311,8 +311,8 @@ export default function PlaylistDetailScreen() {
     if (!auth.currentUser) return;
 
     try {
-      // Táº¡o Ä‘Æ°á»ng dáº«n Ä‘áº¿n collection "liked_songs" cá»§a user
-      // ID cá»§a document chĂ­nh lĂ  ID bĂ i hĂ¡t Ä‘á»ƒ trĂ¡nh trĂ¹ng láº·p
+      // Tạo đường dẫn đến collection "liked_songs" của user
+      // ID của document chính là ID bài hát để tránh trùng lặp
       const likedRef = doc(
         db,
         "users",
@@ -321,7 +321,7 @@ export default function PlaylistDetailScreen() {
         track.id
       );
 
-      // LÆ°u Ä‘áº§y Ä‘á»§ thĂ´ng tin bĂ i hĂ¡t vĂ o Firestore
+      // Lưu đầy đủ thông tin bài hát vào Firestore
       await setDoc(likedRef, {
         trackId: track.id,
         name: track.name,
@@ -329,17 +329,17 @@ export default function PlaylistDetailScreen() {
         album: track.album,
         uri: track.uri,
         preview_url: track.preview_url || null,
-        likedAt: new Date().toISOString(), // LÆ°u thá»i gian Ä‘á»ƒ sáº¯p xáº¿p bĂ i má»›i lĂªn Ä‘áº§u
+        likedAt: new Date().toISOString(), // Lưu thời gian để sắp xếp bài mới lên đầu
       });
       setTimeout(() => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }, 150);
 
-      showToast("ÄĂ£ thĂªm vĂ o bĂ i hĂ¡t Æ°a thĂ­ch", "success");
+      showToast("Đã thêm vào bài hát ưa thích", "success");
     } catch (error) {
-      console.error("Lá»—i khi like:", error);
+      console.error("Lỗi khi like:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Lá»—i", "KhĂ´ng thá»ƒ lÆ°u bĂ i hĂ¡t nĂ y");
+      Alert.alert("Lỗi", "Không thể lưu bài hát này");
     }
   };
 
@@ -374,10 +374,10 @@ export default function PlaylistDetailScreen() {
       setTimeout(() => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }, 150);
-      showToast("ÄĂ£ xĂ³a khá»i playlist", "success");
+      showToast("Đã xóa khỏi playlist", "success");
     } catch (error) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Lá»—i", "KhĂ´ng thá»ƒ xĂ³a bĂ i hĂ¡t");
+      Alert.alert("Lỗi", "Không thể xóa bài hát");
     }
   };
 
@@ -415,7 +415,7 @@ export default function PlaylistDetailScreen() {
               handleLikeTrack(track);
             }}
           >
-            {/* đŸ‘‡ GRADIENT CYAN - BLUE */}
+            {/* 👇 GRADIENT CYAN - BLUE */}
             <LinearGradient
               colors={["#00E5FF", "#2979FF"]}
               start={{ x: 0, y: 0 }}
@@ -454,7 +454,7 @@ export default function PlaylistDetailScreen() {
         <Animated.View
           style={{
             flex: 1,
-            marginRight: 15, // CÄƒn lá» pháº£i cho Ä‘áº¹p
+            marginRight: 15, // Căn lề phải cho đẹp
             borderTopRightRadius: 12,
             borderBottomRightRadius: 12,
             overflow: "hidden",
@@ -469,7 +469,7 @@ export default function PlaylistDetailScreen() {
               handleDelete(track);
             }}
           >
-            {/* đŸ‘‡ GRADIENT RED - ORANGE */}
+            {/* 👇 GRADIENT RED - ORANGE */}
             <LinearGradient
               colors={["#FF1744", "#FF9100"]}
               start={{ x: 0, y: 0 }}
@@ -494,7 +494,7 @@ export default function PlaylistDetailScreen() {
     let currentIndex = array.length,
       randomIndex;
 
-    // Clone máº£ng Ä‘á»ƒ khĂ´ng áº£nh hÆ°á»Ÿng dá»¯ liá»‡u gá»‘c
+    // Clone mảng để không ảnh hưởng dữ liệu gốc
     const newArray = [...array];
 
     while (currentIndex !== 0) {
@@ -556,7 +556,7 @@ export default function PlaylistDetailScreen() {
             {currentPlaylist.name}
           </Text>
           <Text style={styles.headerSubtitle}>
-            {currentPlaylist.owner?.display_name || "Earsgram"} â€¢ {tracks.length}{" "}
+            {currentPlaylist.owner?.display_name || "Eargasm"} • {tracks.length}{" "}
             tracks
           </Text>
         </Animatable.View>
@@ -587,14 +587,14 @@ export default function PlaylistDetailScreen() {
               style={styles.gradientButton}
             >
               <Ionicons name="play" size={24} color="white" />
-              <Text style={styles.gradientButtonText}>PHĂT NGAY</Text>
+              <Text style={styles.gradientButtonText}>PHÁT NGAY</Text>
             </LinearGradient>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.circleButton}
             activeOpacity={0.7}
-            onPress={handleShufflePlay} // <--- Gáº¯n hĂ m vĂ o Ä‘Ă¢y
+            onPress={handleShufflePlay} // <--- Gắn hàm vào đây
           >
             <Ionicons name="shuffle" size={24} color="#E91E63" />
           </TouchableOpacity>
@@ -654,7 +654,7 @@ export default function PlaylistDetailScreen() {
               >
                 <Ionicons name="chevron-back" size={30} color={colors.text} />
                 <Text style={[styles.backText, { color: colors.text }]}>
-                  ThÆ° viá»‡n
+                  Thư viện
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity>
@@ -693,7 +693,7 @@ export default function PlaylistDetailScreen() {
                   >
                     <Ionicons name="add" size={24} color="#E91E63" />
                     <Text style={[styles.addText, { color: colors.text }]}>
-                      ThĂªm nháº¡c
+                      Thêm nhạc
                     </Text>
                   </TouchableOpacity>
                 }
@@ -778,9 +778,9 @@ export default function PlaylistDetailScreen() {
                             </Text>
                           </View>
                           <TouchableOpacity
-                            style={{ padding: 10 }} // TÄƒng padding cho dá»… báº¥m
+                            style={{ padding: 10 }} // Tăng padding cho dễ bấm
                             activeOpacity={0.7}
-                            onPress={() => openOptionsMenu(track)} // <--- Gáº®N HĂ€M Má» MENU
+                            onPress={() => openOptionsMenu(track)} // <--- GẮN HÀM MỞ MENU
                           >
                             <Ionicons
                               name="ellipsis-vertical"
@@ -803,14 +803,14 @@ export default function PlaylistDetailScreen() {
             >
               <View style={styles.modalContainer}>
                 <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>ThĂªm bĂ i hĂ¡t</Text>
+                  <Text style={styles.modalTitle}>Thêm bài hát</Text>
                   <TouchableOpacity onPress={() => setAddModalVisible(false)}>
-                    <Text style={{ color: "#E91E63" }}>ÄĂ³ng</Text>
+                    <Text style={{ color: "#E91E63" }}>Đóng</Text>
                   </TouchableOpacity>
                 </View>
                 <TextInput
                   style={styles.input}
-                  placeholder="TĂ¬m kiáº¿m..."
+                  placeholder="Tìm kiếm..."
                   placeholderTextColor="#666"
                   value={searchQuery}
                   onChangeText={setSearchQuery}
@@ -861,7 +861,7 @@ export default function PlaylistDetailScreen() {
               <TouchableOpacity
                 style={styles.modalOverlay}
                 activeOpacity={1}
-                onPress={() => setOptionsModalVisible(false)} // Báº¥m ra ngoĂ i Ä‘á»ƒ Ä‘Ă³ng
+                onPress={() => setOptionsModalVisible(false)} // Bấm ra ngoài để đóng
               >
                 <View
                   style={[
@@ -875,7 +875,7 @@ export default function PlaylistDetailScreen() {
                     },
                   ]}
                 >
-                  {/* Header cá»§a Modal (ThĂ´ng tin bĂ i hĂ¡t) */}
+                  {/* Header của Modal (Thông tin bài hát) */}
                   {selectedTrackForOptions && (
                     <View
                       style={{
@@ -916,14 +916,14 @@ export default function PlaylistDetailScreen() {
                     </View>
                   )}
 
-                  {/* NĂºt 1: ThĂªm vĂ o Playlist (Má»Ÿ logic add giá»‘ng áº£nh Apple Music) */}
+                  {/* Nút 1: Thêm vào Playlist (Mở logic add giống ảnh Apple Music) */}
                   <TouchableOpacity
                     style={styles.listItem}
                     onPress={() => {
-                      setOptionsModalVisible(false); // ÄĂ³ng menu 3 cháº¥m
+                      setOptionsModalVisible(false); // Đóng menu 3 chấm
                       setTimeout(() => {
-                        setAddToPlaylistModalVisible(true); // Má»Ÿ menu chá»n playlist
-                      }, 300); // Delay xĂ­u cho mÆ°á»£t
+                        setAddToPlaylistModalVisible(true); // Mở menu chọn playlist
+                      }, 300); // Delay xíu cho mượt
                     }}
                   >
                     <Ionicons
@@ -932,10 +932,10 @@ export default function PlaylistDetailScreen() {
                       color="white"
                       style={{ marginRight: 15 }}
                     />
-                    <Text style={styles.name}>ThĂªm vĂ o Playlist</Text>
+                    <Text style={styles.name}>Thêm vào Playlist</Text>
                   </TouchableOpacity>
 
-                  {/* NĂºt 3: Like nhanh */}
+                  {/* Nút 3: Like nhanh */}
                   <TouchableOpacity
                     style={styles.listItem}
                     onPress={() => {
@@ -949,21 +949,21 @@ export default function PlaylistDetailScreen() {
                       color="white"
                       style={{ marginRight: 15 }}
                     />
-                    <Text style={styles.name}>YĂªu thĂ­ch</Text>
+                    <Text style={styles.name}>Yêu thích</Text>
                   </TouchableOpacity>
 
-                  {/* NĂºt 4: XĂ³a (Chá»‰ hiá»‡n náº¿u Ä‘ang trong playlist cá»§a mĂ¬nh) */}
+                  {/* Nút 4: Xóa (Chỉ hiện nếu đang trong playlist của mình) */}
                   <TouchableOpacity
                     style={styles.listItem}
                     onPress={() => {
                       setOptionsModalVisible(false);
                       Alert.alert(
-                        "XĂ³a bĂ i hĂ¡t",
-                        "Báº¡n cĂ³ cháº¯c muá»‘n xĂ³a bĂ i nĂ y khá»i playlist?",
+                        "Xóa bài hát",
+                        "Bạn có chắc muốn xóa bài này khỏi playlist?",
                         [
-                          { text: "Há»§y", style: "cancel" },
+                          { text: "Hủy", style: "cancel" },
                           {
-                            text: "XĂ³a",
+                            text: "Xóa",
                             style: "destructive",
                             onPress: () =>
                               handleDelete(selectedTrackForOptions),
@@ -979,7 +979,7 @@ export default function PlaylistDetailScreen() {
                       style={{ marginRight: 15 }}
                     />
                     <Text style={[styles.name, { color: "#FF1744" }]}>
-                      XĂ³a khá»i Playlist
+                      Xóa khỏi Playlist
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -988,13 +988,13 @@ export default function PlaylistDetailScreen() {
             <Modal
               visible={addToPlaylistModalVisible}
               animationType="slide"
-              presentationStyle="pageSheet" // Kiá»ƒu trÆ°á»£t giá»‘ng iOS
+              presentationStyle="pageSheet" // Kiểu trượt giống iOS
               onRequestClose={() => setAddToPlaylistModalVisible(false)}
             >
               <View style={[styles.modalContainer, { paddingTop: 20 }]}>
                 {/* Header Modal */}
                 <View style={[styles.modalHeader, { borderBottomWidth: 0 }]}>
-                  <Text style={styles.modalTitle}>Chá»n Playlist</Text>
+                  <Text style={styles.modalTitle}>Chọn Playlist</Text>
                   <TouchableOpacity
                     onPress={() => setAddToPlaylistModalVisible(false)}
                   >
@@ -1005,14 +1005,14 @@ export default function PlaylistDetailScreen() {
                         fontWeight: "600",
                       }}
                     >
-                      Há»§y
+                      Hủy
                     </Text>
                   </TouchableOpacity>
                 </View>
 
-                {/* Danh sĂ¡ch Playlist */}
+                {/* Danh sách Playlist */}
                 <FlatList
-                  data={allPlaylists} // Láº¥y tá»« route.params
+                  data={allPlaylists} // Lấy từ route.params
                   keyExtractor={(item) => item.id}
                   contentContainerStyle={{ paddingHorizontal: 20 }}
                   ListEmptyComponent={
@@ -1023,12 +1023,12 @@ export default function PlaylistDetailScreen() {
                         marginTop: 50,
                       }}
                     >
-                      Báº¡n chÆ°a cĂ³ playlist nĂ o khĂ¡c.
+                      Bạn chưa có playlist nào khác.
                     </Text>
                   }
                   renderItem={({ item }) => {
-                    // Logic hiá»ƒn thá»‹ sá»‘ bĂ i hĂ¡t an toĂ n hÆ¡n
-                    // Æ¯u tiĂªn trackCount (Firestore), náº¿u khĂ´ng cĂ³ thĂ¬ check tracks.total (Spotify), cuá»‘i cĂ¹ng lĂ  0
+                    // Logic hiển thị số bài hát an toàn hơn
+                    // Ưu tiên trackCount (Firestore), nếu không có thì check tracks.total (Spotify), cuối cùng là 0
                     const count = item.trackCount ?? item.tracks?.total ?? 0;
 
                     return (
@@ -1054,7 +1054,7 @@ export default function PlaylistDetailScreen() {
                           <Text style={[styles.name, { fontSize: 16 }]}>
                             {item.name}
                           </Text>
-                          <Text style={styles.count}>{count} bĂ i hĂ¡t</Text>
+                          <Text style={styles.count}>{count} bài hát</Text>
                         </View>
 
                         <Ionicons name="add" size={24} color="#666" />
@@ -1073,7 +1073,7 @@ export default function PlaylistDetailScreen() {
           duration={300}
           style={{
             position: "absolute",
-            bottom: 100, // Cao hÆ¡n player bar má»™t chĂºt
+            bottom: 100, // Cao hơn player bar một chút
             alignSelf: "center",
             backgroundColor: toastType === "success" ? "#1DB954" : "#E91E63",
             paddingHorizontal: 20,
@@ -1103,4 +1103,3 @@ export default function PlaylistDetailScreen() {
     </GestureHandlerRootView>
   );
 }
-

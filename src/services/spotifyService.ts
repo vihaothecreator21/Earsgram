@@ -219,7 +219,7 @@ export const createPlaylist = async (
         },
         body: JSON.stringify({
           name: playlistName,
-          description: "Playlist created from Earsgram App (Demo)",
+          description: "Playlist created from Eargasm App (Demo)",
           public: false,
         }),
       }

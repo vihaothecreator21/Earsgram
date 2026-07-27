@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Earsgram",
-    "slug": "earsgram",
+    "name": "Eargasm",
+    "slug": "Eargasm",
     "scheme": "eargasm",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -22,7 +22,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.vihao211.earsgram"
+      "package": "com.vihao211.Eargasm"
     },
     "web": {
       "favicon": "./assets/favicon.png"

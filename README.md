@@ -56,13 +56,11 @@ npm run ios
 
 ## Configuration
 
-The app currently uses Expo's custom URL scheme. Keep this value in sync with the Spotify Developer Dashboard redirect URI:
+The app currently uses Expo's custom URL scheme:
 
 ```text
 eargasm://redirect
 ```
-
-The scheme remains `eargasm://redirect` for compatibility with the existing Spotify OAuth setup.
 
 Register this redirect URI in the Spotify Developer Dashboard for the app client ID.
 
