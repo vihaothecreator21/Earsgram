@@ -11,6 +11,7 @@ import FullPlayer from "../components/FullPlayer";
 import { useMusic } from "../context/MusicContext";
 
 const Tab = createBottomTabNavigator();
+type TabIconName = React.ComponentProps<typeof Ionicons>["name"];
 
 export default function TabsWithPlayer() {
   const { isExpanded } = useMusic(); // ✅ ĐÚNG CHỖ
@@ -29,7 +30,7 @@ export default function TabsWithPlayer() {
           tabBarActiveTintColor: "white",
           tabBarInactiveTintColor: "gray",
           tabBarIcon: ({ focused, color, size }) => {
-            let iconName: any;
+            let iconName: TabIconName = "home";
 
             if (route.name === "Home") {
               iconName = focused ? "home" : "home-outline";

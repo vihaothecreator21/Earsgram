@@ -46,3 +46,9 @@ export interface SpotifyAlbumSummary {
   artists: SpotifyArtist[];
   images: SpotifyImage[];
 }
+
+export interface SpotifyPlaylist {
+  id: string;
+  name: string;
+  images?: SpotifyImage[];
+}

@@ -8,19 +8,20 @@ import {
   addTrackToPlaylist,
 } from "../services/spotifyService";
 import { useMusic } from "../context/MusicContext";
+import { SpotifyPlaylist, SpotifyTrack } from "../types/spotify";
 
 export function useTrackOptions() {
   const { addToQueue, insertNext } = useMusic();
 
   const [visible, setVisible] = useState(false);
-  const [selectedTrack, setSelectedTrack] = useState<any>(null);
-  const [myPlaylists, setMyPlaylists] = useState<any[]>([]);
+  const [selectedTrack, setSelectedTrack] = useState<SpotifyTrack | null>(null);
+  const [myPlaylists] = useState<SpotifyPlaylist[]>([]);
   const [playlistsContainingTrack, setPlaylistsContainingTrack] = useState<
     Set<string>
   >(new Set());
   const [adding, setAdding] = useState(false);
 
-  const openOptions = async (track: any, playlists: any[]) => {
+  const openOptions = async (track: SpotifyTrack, playlists: SpotifyPlaylist[]) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedTrack(track);
     setVisible(true);
@@ -38,12 +39,13 @@ export function useTrackOptions() {
     setPlaylistsContainingTrack(checked);
   };
 
-  const playNext = (track: any) => {
+  const playNext = (track: SpotifyTrack) => {
     insertNext(track);
     setVisible(false);
   };
 
-  const addQueue = async (track: any) => {
+  const addQueue = async (track: SpotifyTrack) => {
+    if (!track.uri) return;
     addToQueue(track);
 
     if (auth.currentUser) {
@@ -53,8 +55,9 @@ export function useTrackOptions() {
     setVisible(false);
   };
 
-  const addPlaylist = async (playlistId: string, track: any) => {
+  const addPlaylist = async (playlistId: string, track: SpotifyTrack) => {
     if (!auth.currentUser) return;
+    if (!track.uri) return;
     setAdding(true);
 
     const token = await getSavedToken(auth.currentUser.uid);

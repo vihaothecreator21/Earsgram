@@ -10,11 +10,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { SpotifyPlaylist, SpotifyTrack } from "../types/spotify";
 
 interface Props {
   visible: boolean;
-  track: any;
-  playlists: any[];
+  track: SpotifyTrack | null;
+  playlists: SpotifyPlaylist[];
   playlistsContainingTrack: Set<string>;
   adding: boolean;
   onPlayNext: () => void;

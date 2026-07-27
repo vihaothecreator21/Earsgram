@@ -323,7 +323,7 @@ export default function FullPlayer() {
               {currentTrack.name}
             </Text>
             <Text style={styles.artist} numberOfLines={1}>
-              {currentTrack.artists.map((a: any) => a.name).join(", ")}
+              {currentTrack.artists.map((a) => a.name).join(", ")}
             </Text>
           </View>
 

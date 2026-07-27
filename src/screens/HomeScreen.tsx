@@ -629,7 +629,10 @@ export default function HomeScreen() {
           trackOptions.selectedTrack &&
           trackOptions.addQueue(trackOptions.selectedTrack)
         }
-        onAddPlaylist={trackOptions.addPlaylist}
+        onAddPlaylist={(playlistId) =>
+          trackOptions.selectedTrack &&
+          trackOptions.addPlaylist(playlistId, trackOptions.selectedTrack)
+        }
         onClose={trackOptions.close}
       />
     </>

@@ -8,6 +8,8 @@ import {
 } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
+type TabIconName = React.ComponentProps<typeof Ionicons>["name"];
+
 // Screens
 import HomeScreen from "../screens/HomeScreen";
 import SearchScreen from "../screens/SearchScreen";
@@ -43,7 +45,7 @@ function TabNavigator() {
         tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: any = "home";
+          let iconName: TabIconName = "home";
           if (route.name === "Home")
             iconName = focused ? "home" : "home-outline";
           else if (route.name === "Search")
