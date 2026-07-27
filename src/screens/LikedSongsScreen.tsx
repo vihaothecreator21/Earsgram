@@ -25,13 +25,14 @@ import {
 import { useMusic } from "../context/MusicContext";
 import { useTheme } from "../context/ThemeContext";
 import { NowPlayingIndicator } from "../components/NowPlayingIndicator";
+import { LikedSong, SpotifyTrack } from "../types/spotify";
 
 export default function LikedSongsScreen() {
   const navigation = useNavigation();
   const { playTrack, currentTrack, isPlaying } = useMusic();
   const { colors, isDark } = useTheme();
 
-  const [likedSongs, setLikedSongs] = useState<any[]>([]);
+  const [likedSongs, setLikedSongs] = useState<LikedSong[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -51,7 +52,7 @@ export default function LikedSongsScreen() {
       const songs = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      }));
+      })) as LikedSong[];
 
       setLikedSongs(songs);
     } catch (error) {
@@ -122,7 +123,7 @@ export default function LikedSongsScreen() {
           style={styles.playAllButton}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            const tracks = likedSongs.map((song) => ({
+            const tracks: SpotifyTrack[] = likedSongs.map((song) => ({
               id: song.trackId,
               name: song.name,
               artists: song.artists,
@@ -203,7 +204,7 @@ export default function LikedSongsScreen() {
               ]}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                const track = {
+                const track: SpotifyTrack = {
                   id: item.trackId,
                   name: item.name,
                   artists: item.artists,
@@ -211,7 +212,7 @@ export default function LikedSongsScreen() {
                   uri: item.uri,
                   preview_url: item.uri,
                 };
-                const allTracks = likedSongs.map((song) => ({
+                const allTracks: SpotifyTrack[] = likedSongs.map((song) => ({
                   id: song.trackId,
                   name: song.name,
                   artists: song.artists,

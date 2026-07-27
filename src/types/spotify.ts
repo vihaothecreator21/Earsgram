@@ -51,4 +51,17 @@ export interface SpotifyPlaylist {
   id: string;
   name: string;
   images?: SpotifyImage[];
+  tracks?: {
+    total: number;
+  };
+}
+
+export interface LikedSong {
+  id: string;
+  trackId: string;
+  name: string;
+  artists: SpotifyArtist[];
+  album: SpotifyAlbum;
+  uri?: string;
+  likedAt: string;
 }

@@ -15,6 +15,7 @@ import {
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "../config/firebaseConfig";
+import { getErrorMessage } from "../utils/getErrorMessage";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -74,8 +75,8 @@ export default function LoginScreen() {
       });
 
       Alert.alert("đŸ‰ Success", "Successfully registered!");
-    } catch (error: any) {
-      Alert.alert("âŒ Error", error.message);
+    } catch (error) {
+      Alert.alert("Error", getErrorMessage(error));
     }
   };
 
@@ -106,8 +107,8 @@ export default function LoginScreen() {
       }
 
       // App sáº½ tá»± Ä‘á»™ng chuyá»ƒn mĂ n hĂ¬nh nhá» onAuthStateChanged á»Ÿ nÆ¡i khĂ¡c
-    } catch (error: any) {
-      Alert.alert("âŒ Error signing in", error.message);
+    } catch (error) {
+      Alert.alert("Error signing in", getErrorMessage(error));
     }
   };
 

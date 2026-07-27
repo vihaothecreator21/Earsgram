@@ -1,4 +1,4 @@
-// src/screens/LibraryScreen.tsx
+﻿// src/screens/LibraryScreen.tsx
 import React, { useState, useCallback } from "react";
 import {
   View,
@@ -16,11 +16,17 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import {
+  NavigationProp,
+  useFocusEffect,
+  useNavigation,
+} from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import { AppStyles as styles } from "../styles/AppStyles"; // ✅ Chỉ dùng 1 nguồn styles duy nhất
+import { AppStyles as styles } from "../styles/AppStyles"; // âœ… Chá»‰ dĂ¹ng 1 nguá»“n styles duy nháº¥t
 import { useTheme } from "../context/ThemeContext";
+import { SpotifyPlaylist } from "../types/spotify";
+import { getErrorMessage } from "../utils/getErrorMessage";
 
 if (
   Platform.OS === "android" &&
@@ -36,15 +42,24 @@ import {
   createPlaylist,
 } from "../services/spotifyService";
 
-import { doc, setDoc } from "firebase/firestore"; // Bỏ getDoc vì không cần merge nữa
+import { doc, setDoc } from "firebase/firestore"; // Bá» getDoc vĂ¬ khĂ´ng cáº§n merge ná»¯a
 import { db, auth } from "../config/firebaseConfig";
 
+type LibraryNavigationRoutes = {
+  LikedSongs: undefined;
+  PlaylistDetail: {
+    playlist: SpotifyPlaylist;
+    playlistIndex: number;
+    allPlaylists: SpotifyPlaylist[];
+  };
+};
+
 export default function LibraryScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NavigationProp<LibraryNavigationRoutes>>();
   const { colors, isDark } = useTheme();
 
   // State
-  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [playlists, setPlaylists] = useState<SpotifyPlaylist[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
@@ -53,7 +68,7 @@ export default function LibraryScreen() {
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [creating, setCreating] = useState(false);
 
-  // Mỗi khi màn hình được focus, load lại danh sách
+  // Má»—i khi mĂ n hĂ¬nh Ä‘Æ°á»£c focus, load láº¡i danh sĂ¡ch
   useFocusEffect(
     useCallback(() => {
       fetchPlaylists();
@@ -68,16 +83,16 @@ export default function LibraryScreen() {
   const fetchPlaylists = async () => {
     try {
       if (!auth.currentUser) return;
-      // ✅ FIX: Truyền uid vào getSavedToken để lấy đúng token
+      // âœ… FIX: Truyá»n uid vĂ o getSavedToken Ä‘á»ƒ láº¥y Ä‘Ăºng token
       const token = await getSavedToken(auth.currentUser.uid);
 
       if (token) {
         const data = await getUserPlaylists(token);
         const rawPlaylists = data.items || [];
 
-        // ✅ FIX QUAN TRỌNG:
-        // Sử dụng trực tiếp dữ liệu từ Spotify để đảm bảo số lượng bài hát (total) luôn đúng.
-        // Không cần merge với Firestore nữa vì Spotify là nguồn dữ liệu gốc (Single Source of Truth).
+        // âœ… FIX QUAN TRá»ŒNG:
+        // Sá»­ dá»¥ng trá»±c tiáº¿p dá»¯ liá»‡u tá»« Spotify Ä‘á»ƒ Ä‘áº£m báº£o sá»‘ lÆ°á»£ng bĂ i hĂ¡t (total) luĂ´n Ä‘Ăºng.
+        // KhĂ´ng cáº§n merge vá»›i Firestore ná»¯a vĂ¬ Spotify lĂ  nguá»“n dá»¯ liá»‡u gá»‘c (Single Source of Truth).
         setPlaylists(rawPlaylists);
       }
     } catch (error) {
@@ -89,7 +104,7 @@ export default function LibraryScreen() {
 
   const handleCreate = async () => {
     if (!newPlaylistName.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập tên Playlist");
+      Alert.alert("Lá»—i", "Vui lĂ²ng nháº­p tĂªn Playlist");
       return;
     }
     setCreating(true);
@@ -100,10 +115,10 @@ export default function LibraryScreen() {
 
       const user = await getUserProfile(token);
 
-      // 1. Tạo trên Spotify
+      // 1. Táº¡o trĂªn Spotify
       const newPl = await createPlaylist(token, user.id, newPlaylistName);
 
-      // 2. Lưu vào Firestore để backup (nếu cần dùng sau này)
+      // 2. LÆ°u vĂ o Firestore Ä‘á»ƒ backup (náº¿u cáº§n dĂ¹ng sau nĂ y)
       if (auth.currentUser) {
         await setDoc(doc(db, "playlists", newPl.id), {
           spotifyId: newPl.id,
@@ -116,16 +131,16 @@ export default function LibraryScreen() {
 
       setCreateModalVisible(false);
       setNewPlaylistName("");
-      fetchPlaylists(); // Load lại để thấy playlist mới
-      Alert.alert("Thành công", "Đã tạo playlist mới!");
-    } catch (e: any) {
-      Alert.alert("Lỗi", e.message);
+      fetchPlaylists(); // Load láº¡i Ä‘á»ƒ tháº¥y playlist má»›i
+      Alert.alert("ThĂ nh cĂ´ng", "ÄĂ£ táº¡o playlist má»›i!");
+    } catch (e) {
+      Alert.alert("Lá»—i", getErrorMessage(e));
     } finally {
       setCreating(false);
     }
   };
 
-  const openPlaylistDetail = (playlist: any, index: number) => {
+  const openPlaylistDetail = (playlist: SpotifyPlaylist, index: number) => {
     navigation.navigate("PlaylistDetail", {
       playlist: playlist,
       playlistIndex: index,
@@ -138,7 +153,7 @@ export default function LibraryScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <Text style={[styles.title, { color: colors.text }]}>Thư viện</Text>
+          <Text style={[styles.title, { color: colors.text }]}>ThÆ° viá»‡n</Text>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <TouchableOpacity onPress={toggleViewMode} style={styles.iconBtn}>
               <Ionicons
@@ -151,7 +166,7 @@ export default function LibraryScreen() {
               onPress={() => setCreateModalVisible(true)}
               style={styles.createBtn}
             >
-              <Text style={styles.createBtnText}>+ Tạo mới</Text>
+              <Text style={styles.createBtnText}>+ Táº¡o má»›i</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -204,7 +219,7 @@ export default function LibraryScreen() {
                   marginTop: 50,
                 }}
               >
-                Chưa có playlist nào.
+                ChÆ°a cĂ³ playlist nĂ o.
               </Text>
             }
             renderItem={({ item, index }) => (
@@ -231,9 +246,9 @@ export default function LibraryScreen() {
                   >
                     {item.name}
                   </Text>
-                  {/* ✅ FIX: Hiển thị đúng số bài từ Spotify */}
+                  {/* âœ… FIX: Hiá»ƒn thá»‹ Ä‘Ăºng sá»‘ bĂ i tá»« Spotify */}
                   <Text style={[styles.count, { color: colors.textSecondary }]}>
-                    {item.tracks?.total || 0} bài hát
+                    {item.tracks?.total || 0} bĂ i hĂ¡t
                   </Text>
                 </View>
                 {viewMode === "list" && (
@@ -260,7 +275,7 @@ export default function LibraryScreen() {
               style={[styles.modalView, { backgroundColor: colors.surface }]}
             >
               <Text style={[styles.modalTitle, { color: colors.text }]}>
-                Tạo Playlist Mới
+                Táº¡o Playlist Má»›i
               </Text>
               <TextInput
                 style={[
@@ -271,7 +286,7 @@ export default function LibraryScreen() {
                     borderColor: colors.border,
                   },
                 ]}
-                placeholder="Tên playlist..."
+                placeholder="TĂªn playlist..."
                 placeholderTextColor={colors.textSecondary}
                 value={newPlaylistName}
                 onChangeText={setNewPlaylistName}
@@ -282,7 +297,7 @@ export default function LibraryScreen() {
                   style={[styles.btn, styles.btnCancel]}
                   onPress={() => setCreateModalVisible(false)}
                 >
-                  <Text style={styles.btnText}>Hủy</Text>
+                  <Text style={styles.btnText}>Há»§y</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.btn, styles.btnConfirm]}
@@ -290,7 +305,7 @@ export default function LibraryScreen() {
                   disabled={creating}
                 >
                   <Text style={styles.btnText}>
-                    {creating ? "Đang tạo..." : "Tạo"}
+                    {creating ? "Äang táº¡o..." : "Táº¡o"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -302,4 +317,5 @@ export default function LibraryScreen() {
   );
 }
 
-// ✅ FIX: ĐÃ XÓA KHỐI 'const styles = ...' Ở ĐÂY ĐỂ TRÁNH LỖI XUNG ĐỘT
+// âœ… FIX: ÄĂƒ XĂ“A KHá»I 'const styles = ...' á» ÄĂ‚Y Äá»‚ TRĂNH Lá»–I XUNG Äá»˜T
+
