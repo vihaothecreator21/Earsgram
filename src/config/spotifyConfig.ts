@@ -1,6 +1,3 @@
-// src/config/spotifyConfig.ts
-import { makeRedirectUri } from "expo-auth-session";
-
 export const REDIRECT_URI = "eargasm://redirect";
 
 export const SPOTIFY_CONFIG = {

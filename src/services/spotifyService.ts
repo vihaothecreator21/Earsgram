@@ -149,8 +149,6 @@ export const getArtistAlbums = async (token: string, artistId: string) => {
 };
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-const TOKEN_KEY = "spotify_access_token";
-const EXPIRATION_KEY = "spotify_token_expiration";
 
 export const saveToken = async (
   token: string,
