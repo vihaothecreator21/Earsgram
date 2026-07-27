@@ -32,3 +32,17 @@ export interface SpotifyProfile {
   display_name?: string;
   images?: SpotifyImage[];
 }
+
+export interface SpotifyTokenResponse {
+  access_token: string;
+  expires_in: number;
+  token_type?: string;
+  scope?: string;
+}
+
+export interface SpotifyAlbumSummary {
+  id: string;
+  name: string;
+  artists: SpotifyArtist[];
+  images: SpotifyImage[];
+}

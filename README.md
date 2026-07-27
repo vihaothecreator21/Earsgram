@@ -27,6 +27,7 @@ A React Native music app built with Expo, Spotify OAuth, Firebase, and a custom 
 
 ```text
 App.tsx                 App providers and auth gate
+docs                    Architecture and Firebase rules notes
 src/components          Shared UI and player components
 src/context             Auth, user, theme, and music state
 src/navigation          Stack and tab navigation
@@ -84,3 +85,5 @@ npm run typecheck
 ## Security Notes
 
 Do not commit `.env` files or private service credentials. If this project is deployed beyond demo usage, move Spotify token exchange/refresh behind a backend service and audit Firestore rules.
+
+See `docs/ARCHITECTURE.md` and `docs/FIRESTORE_RULES.example` for implementation notes.
