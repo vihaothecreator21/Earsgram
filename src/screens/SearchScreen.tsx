@@ -27,6 +27,7 @@ import {
   getUserPlaylists,
   addTrackToPlaylist,
   addItemToQueue,
+  isSpotifyDashboardAccessError,
 } from "../services/spotifyService";
 import { db, auth } from "../config/firebaseConfig";
 import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
@@ -123,8 +124,14 @@ export default function SearchScreen() {
       setTracks(data.tracks?.items || []);
       setArtists(data.artists?.items || []);
     } catch (error) {
-      if (__DEV__) console.error(error);
-      setErrorMessage("Search is temporarily unavailable. Please try again.");
+      if (isSpotifyDashboardAccessError(error)) {
+        setErrorMessage(
+          "This Spotify account is not registered as a test user for the app. Add it in the Spotify Developer Dashboard, then reconnect."
+        );
+      } else {
+        if (__DEV__) console.error(error);
+        setErrorMessage("Search is temporarily unavailable. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

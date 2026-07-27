@@ -8,6 +8,29 @@ import {
   SpotifyTrack,
 } from "../types/spotify";
 
+export class ApiResponseError extends Error {
+  status: number;
+  url: string;
+  bodyPreview: string;
+
+  constructor(response: Response, bodyPreview: string) {
+    super(
+      response.status === 403 && bodyPreview.includes("developer.spotify.com")
+        ? "Spotify access denied. Add this Spotify account in the Spotify Developer Dashboard users list."
+        : `Expected JSON from ${response.url || "request"} (${response.status}): ${bodyPreview}`
+    );
+    this.name = "ApiResponseError";
+    this.status = response.status;
+    this.url = response.url;
+    this.bodyPreview = bodyPreview;
+  }
+}
+
+export const isSpotifyDashboardAccessError = (error: unknown) =>
+  error instanceof ApiResponseError &&
+  error.status === 403 &&
+  error.bodyPreview.includes("developer.spotify.com");
+
 const readJsonResponse = async <T = any>(response: Response): Promise<T> => {
   const bodyText = await response.text();
 
@@ -15,9 +38,7 @@ const readJsonResponse = async <T = any>(response: Response): Promise<T> => {
     return JSON.parse(bodyText) as T;
   } catch {
     const preview = bodyText.slice(0, 120).trim() || "Empty response";
-    throw new Error(
-      `Expected JSON from ${response.url || "request"} (${response.status}): ${preview}`
-    );
+    throw new ApiResponseError(response, preview);
   }
 };
 

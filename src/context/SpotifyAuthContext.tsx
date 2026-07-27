@@ -12,6 +12,7 @@ import {
   exchangeCodeForToken,
   getSavedToken,
   getUserProfile,
+  isSpotifyDashboardAccessError,
   saveToken,
 } from "../services/spotifyService";
 import { SpotifyProfile } from "../types/spotify";
@@ -63,7 +64,9 @@ export const SpotifyAuthProvider = ({ children }: { children: React.ReactNode })
           const profile = await getUserProfile(activeToken);
           setUserProfile(profile);
         } catch (error) {
-          if (__DEV__) console.log("Spotify token invalid or expired", error);
+          if (__DEV__ && !isSpotifyDashboardAccessError(error)) {
+            console.log("Spotify token invalid or expired", error);
+          }
           await clearToken(user.uid);
           setToken(null);
         }

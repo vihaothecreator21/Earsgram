@@ -27,6 +27,7 @@ import {
   getSavedToken,
   getUserPlaylists,
   getUserTopTracks,
+  isSpotifyDashboardAccessError,
 } from "../services/spotifyService";
 import {
   SkeletonAlbumCard,
@@ -274,8 +275,16 @@ export default function HomeScreen() {
       const data = await getUserTopTracks(token);
       setTracks(data.items || []);
     } catch (e) {
-      if (__DEV__) console.error(e);
-      setErrorMessage("Could not load music recommendations. Check your connection and try again.");
+      if (isSpotifyDashboardAccessError(e)) {
+        setErrorMessage(
+          "This Spotify account is not registered as a test user for the app. Add it in the Spotify Developer Dashboard, then reconnect."
+        );
+      } else {
+        if (__DEV__) console.error(e);
+        setErrorMessage(
+          "Could not load music recommendations. Check your connection and try again."
+        );
+      }
     } finally {
       setLoading(false);
     }
